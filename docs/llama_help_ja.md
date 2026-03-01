@@ -1,0 +1,416 @@
+# `llama-server --help` 日本語版
+
+実行コマンド:
+
+```bash
+./llama.cpp/build/bin/llama-server --help
+```
+
+初期出力:
+
+```text
+ggml_cuda_init: found 1 CUDA devices:
+  Device 0: NVIDIA GeForce RTX 4070 Ti, compute capability 8.9, VMM: yes
+```
+
+以下は `llama.cpp` の `llama-server --help` の内容を、日本語で読みやすく整理したものです。
+オプション名やフラグ名、環境変数名、テンプレート名などは原文どおり保持しています。
+
+## common params
+
+- `-h, --help, --usage`: 使い方を表示して終了します。
+- `--version`: バージョンとビルド情報を表示します。
+- `--license`: ソースコードのライセンスと依存関係を表示します。
+- `-cl, --cache-list`: キャッシュ内のモデル一覧を表示します。
+- `--completion-bash`: `llama.cpp` 用の `bash` 補完スクリプトを標準出力に出します。
+- `--verbose-prompt`: 生成前に詳細なプロンプトを表示します（既定値: `false`）。
+- `-t, --threads N`: 生成時に使う CPU スレッド数を指定します（既定値: `-1`）。
+  - `env: LLAMA_ARG_THREADS`
+- `-tb, --threads-batch N`: バッチ処理とプロンプト処理に使うスレッド数を指定します（既定値: `--threads` と同じ）。
+- `-C, --cpu-mask M`: CPU アフィニティマスクを任意長の 16 進数で指定します。`--cpu-range` を補完します（既定値: `""`）。
+- `-Cr, --cpu-range lo-hi`: CPU アフィニティに使う CPU 範囲を指定します。`--cpu-mask` を補完します。
+- `--cpu-strict <0|1>`: 厳密な CPU 配置を使います（既定値: `0`）。
+- `--prio N`: プロセスまたはスレッドの優先度を設定します。`low(-1)`, `normal(0)`, `medium(1)`, `high(2)`, `realtime(3)`（既定値: `0`）。
+- `--poll <0...100>`: 待機時のポーリング強度を設定します（`0` はポーリングなし、既定値: `50`）。
+- `-Cb, --cpu-mask-batch M`: バッチ処理用の CPU アフィニティマスクを指定します。`--cpu-range-batch` を補完します（既定値: `--cpu-mask` と同じ）。
+- `-Crb, --cpu-range-batch lo-hi`: バッチ処理用の CPU 範囲を指定します。`--cpu-mask-batch` を補完します。
+- `--cpu-strict-batch <0|1>`: バッチ処理で厳密な CPU 配置を使います（既定値: `--cpu-strict` と同じ）。
+- `--prio-batch N`: バッチ処理の優先度を設定します。`0-normal`, `1-medium`, `2-high`, `3-realtime`（既定値: `0`）。
+- `--poll-batch <0|1>`: バッチ処理で待機時ポーリングを使います（既定値: `--poll` と同じ）。
+- `-c, --ctx-size N`: プロンプトコンテキストサイズを指定します（既定値: `0`、`0` はモデルから読み込み）。
+  - `env: LLAMA_ARG_CTX_SIZE`
+- `-n, --predict, --n-predict N`: 生成するトークン数を指定します（既定値: `-1`、`-1` は無制限）。
+  - `env: LLAMA_ARG_N_PREDICT`
+- `-b, --batch-size N`: 論理上の最大バッチサイズを指定します（既定値: `2048`）。
+  - `env: LLAMA_ARG_BATCH`
+- `-ub, --ubatch-size N`: 物理上の最大バッチサイズを指定します（既定値: `512`）。
+  - `env: LLAMA_ARG_UBATCH`
+- `--keep N`: 初期プロンプトから保持するトークン数を指定します（既定値: `0`、`-1` はすべて保持）。
+- `--swa-full`: フルサイズの SWA キャッシュを使います（既定値: `false`）。
+  - 詳細: <https://github.com/ggml-org/llama.cpp/pull/13194#issuecomment-2868343055>
+  - `env: LLAMA_ARG_SWA_FULL`
+- `-fa, --flash-attn [on|off|auto]`: Flash Attention の使用を設定します（`on`, `off`, `auto`、既定値: `auto`）。
+  - `env: LLAMA_ARG_FLASH_ATTN`
+- `--perf, --no-perf`: `libllama` 内部の性能計測を有効にするかを設定します（既定値: `false`）。
+  - `env: LLAMA_ARG_PERF`
+- `-e, --escape, --no-escape`: エスケープシーケンス（`\n`, `\r`, `\t`, `\'`, `\"`, `\\`）を処理するかを設定します（既定値: `true`）。
+- `--rope-scaling {none,linear,yarn}`: RoPE 周波数スケーリング方式を指定します。明示しない場合はモデル指定がなければ `linear` です。
+  - `env: LLAMA_ARG_ROPE_SCALING_TYPE`
+- `--rope-scale N`: RoPE のコンテキスト拡張倍率を指定します。コンテキストを `N` 倍に拡張します。
+  - `env: LLAMA_ARG_ROPE_SCALE`
+- `--rope-freq-base N`: NTK-aware スケーリングで使う RoPE 基本周波数を指定します（既定値: モデルから読み込み）。
+  - `env: LLAMA_ARG_ROPE_FREQ_BASE`
+- `--rope-freq-scale N`: RoPE の周波数スケーリング係数を指定します。コンテキストを `1/N` 倍の係数で拡張します。
+  - `env: LLAMA_ARG_ROPE_FREQ_SCALE`
+- `--yarn-orig-ctx N`: YaRN の元コンテキスト長を指定します（既定値: `0`、`0` は学習時コンテキスト長）。
+  - `env: LLAMA_ARG_YARN_ORIG_CTX`
+- `--yarn-ext-factor N`: YaRN の外挿ミックス係数を指定します（既定値: `-1.00`、`0.0` は完全補間）。
+  - `env: LLAMA_ARG_YARN_EXT_FACTOR`
+- `--yarn-attn-factor N`: YaRN の `sqrt(t)` または attention 強度のスケールを指定します（既定値: `-1.00`）。
+  - `env: LLAMA_ARG_YARN_ATTN_FACTOR`
+- `--yarn-beta-slow N`: YaRN の高補正次元または alpha を指定します（既定値: `-1.00`）。
+  - `env: LLAMA_ARG_YARN_BETA_SLOW`
+- `--yarn-beta-fast N`: YaRN の低補正次元または beta を指定します（既定値: `-1.00`）。
+  - `env: LLAMA_ARG_YARN_BETA_FAST`
+- `-kvo, --kv-offload, -nkvo, --no-kv-offload`: KV キャッシュのオフロードを有効にするかを設定します（既定値: 有効）。
+  - `env: LLAMA_ARG_KV_OFFLOAD`
+- `--repack, -nr, --no-repack`: 重みの再パックを有効にするかを設定します（既定値: 有効）。
+  - `env: LLAMA_ARG_REPACK`
+- `--no-host`: ホストバッファを迂回し、追加バッファを使えるようにします。
+  - `env: LLAMA_ARG_NO_HOST`
+- `-ctk, --cache-type-k TYPE`: K 用 KV キャッシュのデータ型を指定します。
+  - 許可値: `f32`, `f16`, `bf16`, `q8_0`, `q4_0`, `q4_1`, `iq4_nl`, `q5_0`, `q5_1`
+  - 既定値: `f16`
+  - `env: LLAMA_ARG_CACHE_TYPE_K`
+- `-ctv, --cache-type-v TYPE`: V 用 KV キャッシュのデータ型を指定します。
+  - 許可値: `f32`, `f16`, `bf16`, `q8_0`, `q4_0`, `q4_1`, `iq4_nl`, `q5_0`, `q5_1`
+  - 既定値: `f16`
+  - `env: LLAMA_ARG_CACHE_TYPE_V`
+- `-dt, --defrag-thold N`: KV キャッシュのデフラグ閾値です（非推奨）。
+  - `env: LLAMA_ARG_DEFRAG_THOLD`
+- `--mlock`: モデルをスワップや圧縮させず RAM に保持するよう OS に要求します。
+  - `env: LLAMA_ARG_MLOCK`
+- `--mmap, --no-mmap`: モデルをメモリマップするかを設定します。`mmap` を無効にすると読み込みは遅くなりますが、`mlock` を使わない場合はページアウトを減らせることがあります（既定値: 有効）。
+  - `env: LLAMA_ARG_MMAP`
+- `-dio, --direct-io, -ndio, --no-direct-io`: 使える場合は DirectIO を使います（既定値: 無効）。
+  - `env: LLAMA_ARG_DIO`
+- `--numa TYPE`: 一部の NUMA 環境向けの最適化を試みます。
+  - `distribute`: 全ノードに均等に分散して実行します。
+  - `isolate`: 実行開始ノード上の CPU にだけスレッドを生成します。
+  - `numactl`: `numactl` が提供する CPU マップを使います。
+  - 以前にこの設定なしで実行していた場合は、利用前にシステムのページキャッシュを落とすことが推奨されます。
+  - 参照: <https://github.com/ggml-org/llama.cpp/issues/1437>
+  - `env: LLAMA_ARG_NUMA`
+- `-dev, --device <dev1,dev2,..>`: オフロードに使うデバイスをカンマ区切りで指定します（`none` はオフロードしない）。
+  - 利用可能なデバイス一覧は `--list-devices` で確認できます。
+  - `env: LLAMA_ARG_DEVICE`
+- `--list-devices`: 利用可能なデバイス一覧を表示して終了します。
+- `-ot, --override-tensor <tensor name pattern>=<buffer type>,...`: テンソルのバッファ型を上書きします。
+  - `env: LLAMA_ARG_OVERRIDE_TENSOR`
+- `-cmoe, --cpu-moe`: すべての Mixture of Experts（MoE）重みを CPU に置きます。
+  - `env: LLAMA_ARG_CPU_MOE`
+- `-ncmoe, --n-cpu-moe N`: 先頭 `N` 層の MoE 重みを CPU に置きます。
+  - `env: LLAMA_ARG_N_CPU_MOE`
+- `-ngl, --gpu-layers, --n-gpu-layers N`: VRAM に置くレイヤー数の上限を指定します。正確な数値、`auto`、`all` を使えます（既定値: `auto`）。
+  - `env: LLAMA_ARG_N_GPU_LAYERS`
+- `-sm, --split-mode {none,layer,row}`: 複数 GPU 間でモデルをどう分割するかを指定します。
+  - `none`: 1 枚の GPU のみ使用します。
+  - `layer`: レイヤーと KV を複数 GPU に分散します（既定値）。
+  - `row`: 行方向に分割します。
+  - `env: LLAMA_ARG_SPLIT_MODE`
+- `-ts, --tensor-split N0,N1,N2,...`: 各 GPU にオフロードするモデルの比率をカンマ区切りで指定します。例: `3,1`。
+  - `env: LLAMA_ARG_TENSOR_SPLIT`
+- `-mg, --main-gpu INDEX`: 使用する主 GPU を指定します。`split-mode=none` ではモデル用、`split-mode=row` では中間結果と KV 用です（既定値: `0`）。
+  - `env: LLAMA_ARG_MAIN_GPU`
+- `-fit, --fit [on|off]`: 未設定引数をデバイスメモリに収まるよう自動調整するかを設定します（`on` または `off`、既定値: `on`）。
+  - `env: LLAMA_ARG_FIT`
+- `-fitt, --fit-target MiB0,MiB1,MiB2,...`: `--fit` 用のデバイスごとの目標余白を MiB で指定します。1 つだけ指定した場合は全デバイスに適用されます（既定値: `1024`）。
+  - `env: LLAMA_ARG_FIT_TARGET`
+- `-fitc, --fit-ctx N`: `--fit` で設定可能な最小 `ctx` サイズを指定します（既定値: `4096`）。
+  - `env: LLAMA_ARG_FIT_CTX`
+- `--check-tensors`: モデルのテンソルデータに不正な値がないか確認します（既定値: `false`）。
+- `--override-kv KEY=TYPE:VALUE,...`: 高度な設定です。キー単位でモデルメタデータを上書きします。
+  - 複数指定時はカンマ区切りです。
+  - 型: `int`, `float`, `bool`, `str`
+  - 例: `--override-kv tokenizer.ggml.add_bos_token=bool:false,tokenizer.ggml.add_eos_token=bool:false`
+- `--op-offload, --no-op-offload`: ホスト側テンソル演算をデバイスにオフロードするかを設定します（既定値: `true`）。
+- `--lora FNAME`: LoRA アダプタのパスを指定します。複数指定時はカンマ区切りです。
+- `--lora-scaled FNAME:SCALE,...`: スケール付きで LoRA アダプタを指定します（形式: `FNAME:SCALE,...`）。
+- `--control-vector FNAME`: コントロールベクトルを追加します。
+  - 複数指定時はカンマ区切りです。
+- `--control-vector-scaled FNAME:SCALE,...`: スケール付きでコントロールベクトルを追加します。
+  - 複数指定時はカンマ区切りです（形式: `FNAME:SCALE,...`）。
+- `--control-vector-layer-range START END`: コントロールベクトルを適用するレイヤー範囲を指定します。開始・終了ともに含みます。
+- `-m, --model FNAME`: 読み込むモデルのパスを指定します。
+  - `env: LLAMA_ARG_MODEL`
+- `-mu, --model-url MODEL_URL`: モデルのダウンロード URL を指定します（既定値: 未使用）。
+  - `env: LLAMA_ARG_MODEL_URL`
+- `-dr, --docker-repo [<repo>/]<model>[:quant]`: Docker Hub 上のモデルリポジトリを指定します。
+  - `repo` は省略可能で、既定では `ai/` です。
+  - `quant` も省略可能で、既定では `:latest` です。
+  - 例: `gemma3`
+  - 既定値: 未使用
+  - `env: LLAMA_ARG_DOCKER_REPO`
+- `-hf, -hfr, --hf-repo <user>/<model>[:quant]`: Hugging Face のモデルリポジトリを指定します。
+  - `quant` は省略可能で、大文字小文字は区別されません。
+  - 既定では `Q4_K_M` を使い、存在しない場合はリポジトリ内の先頭ファイルにフォールバックします。
+  - `mmproj` が利用可能なら自動でダウンロードされます。無効化するには `--no-mmproj` を追加します。
+  - 例: `unsloth/phi-4-GGUF:q4_k_m`
+  - 既定値: 未使用
+  - `env: LLAMA_ARG_HF_REPO`
+- `-hfd, -hfrd, --hf-repo-draft <user>/<model>[:quant]`: `--hf-repo` と同じですが、ドラフトモデル用です（既定値: 未使用）。
+  - `env: LLAMA_ARG_HFD_REPO`
+- `-hff, --hf-file FILE`: Hugging Face 上のモデルファイル名を指定します。指定すると `--hf-repo` の `quant` よりこちらが優先されます（既定値: 未使用）。
+  - `env: LLAMA_ARG_HF_FILE`
+- `-hfv, -hfrv, --hf-repo-v <user>/<model>[:quant]`: ボコーダーモデル用の Hugging Face リポジトリを指定します（既定値: 未使用）。
+  - `env: LLAMA_ARG_HF_REPO_V`
+- `-hffv, --hf-file-v FILE`: ボコーダーモデル用の Hugging Face ファイル名を指定します（既定値: 未使用）。
+  - `env: LLAMA_ARG_HF_FILE_V`
+- `-hft, --hf-token TOKEN`: Hugging Face のアクセストークンを指定します（既定値: `HF_TOKEN` 環境変数の値）。
+  - `env: HF_TOKEN`
+- `--log-disable`: ログ出力を無効にします。
+- `--log-file FNAME`: ログをファイルへ出力します。
+  - `env: LLAMA_LOG_FILE`
+- `--log-colors [on|off|auto]`: カラー付きログを設定します（`on`, `off`, `auto`、既定値: `auto`）。
+  - `auto` は出力先が端末のときに色を有効化します。
+  - `env: LLAMA_LOG_COLORS`
+- `-v, --verbose, --log-verbose`: 詳細度を無限大に設定し、すべてのログを出します。デバッグ向けです。
+- `--offline`: オフラインモードです。キャッシュのみを使い、ネットワークアクセスを防ぎます。
+  - `env: LLAMA_OFFLINE`
+- `-lv, --verbosity, --log-verbosity N`: 詳細度の閾値を設定します。これより高い詳細度のメッセージは無視されます。
+  - `0`: 汎用出力
+  - `1`: エラー
+  - `2`: 警告
+  - `3`: 情報
+  - `4`: デバッグ
+  - 既定値: `3`
+  - `env: LLAMA_LOG_VERBOSITY`
+- `--log-prefix`: ログメッセージにプレフィックスを付けます。
+  - `env: LLAMA_LOG_PREFIX`
+- `--log-timestamps`: ログメッセージにタイムスタンプを付けます。
+  - `env: LLAMA_LOG_TIMESTAMPS`
+- `-ctkd, --cache-type-k-draft TYPE`: ドラフトモデル用の K の KV キャッシュ型を指定します。
+  - 許可値: `f32`, `f16`, `bf16`, `q8_0`, `q4_0`, `q4_1`, `iq4_nl`, `q5_0`, `q5_1`
+  - 既定値: `f16`
+  - `env: LLAMA_ARG_CACHE_TYPE_K_DRAFT`
+- `-ctvd, --cache-type-v-draft TYPE`: ドラフトモデル用の V の KV キャッシュ型を指定します。
+  - 許可値: `f32`, `f16`, `bf16`, `q8_0`, `q4_0`, `q4_1`, `iq4_nl`, `q5_0`, `q5_1`
+  - 既定値: `f16`
+  - `env: LLAMA_ARG_CACHE_TYPE_V_DRAFT`
+
+## sampling params
+
+- `--samplers SAMPLERS`: 生成時に使うサンプラーを、適用順に `;` 区切りで指定します。
+  - 既定値: `penalties;dry;top_n_sigma;top_k;typ_p;top_p;min_p;xtc;temperature`
+- `-s, --seed SEED`: 乱数シードを指定します（既定値: `-1`、`-1` はランダムシード）。
+- `--sampler-seq, --sampling-seq SEQUENCE`: 使用するサンプラー列を簡略表記で指定します（既定値: `edskypmxt`）。
+- `--ignore-eos`: EOS トークンを無視して生成を続けます（`--logit-bias EOS-inf` を暗黙に含みます）。
+- `--temp, --temperature N`: 温度を指定します（既定値: `0.80`）。
+- `--top-k N`: top-k サンプリングを指定します（既定値: `40`、`0` で無効）。
+  - `env: LLAMA_ARG_TOP_K`
+- `--top-p N`: top-p サンプリングを指定します（既定値: `0.95`、`1.0` で無効）。
+- `--min-p N`: min-p サンプリングを指定します（既定値: `0.05`、`0.0` で無効）。
+- `--top-nsigma, --top-n-sigma N`: top-n-sigma サンプリングを指定します（既定値: `-1.00`、`-1.0` で無効）。
+- `--xtc-probability N`: XTC の確率を指定します（既定値: `0.00`、`0.0` で無効）。
+- `--xtc-threshold N`: XTC の閾値を指定します（既定値: `0.10`、`1.0` で無効）。
+- `--typical, --typical-p N`: locally typical sampling の `p` を指定します（既定値: `1.00`、`1.0` で無効）。
+- `--repeat-last-n N`: 繰り返しペナルティの対象にする直近 `n` トークン数を指定します（既定値: `64`、`0` で無効、`-1` で `ctx_size`）。
+- `--repeat-penalty N`: 同じトークン列への繰り返しペナルティを指定します（既定値: `1.00`、`1.0` で無効）。
+- `--presence-penalty N`: presence penalty を指定します（既定値: `0.00`、`0.0` で無効）。
+- `--frequency-penalty N`: frequency penalty を指定します（既定値: `0.00`、`0.0` で無効）。
+- `--dry-multiplier N`: DRY サンプリングの倍率を指定します（既定値: `0.00`、`0.0` で無効）。
+- `--dry-base N`: DRY サンプリングの基準値を指定します（既定値: `1.75`）。
+- `--dry-allowed-length N`: DRY サンプリングで許可する長さを指定します（既定値: `2`）。
+- `--dry-penalty-last-n N`: DRY ペナルティの対象にする直近 `n` トークン数を指定します（既定値: `-1`、`0` で無効、`-1` でコンテキストサイズ）。
+- `--dry-sequence-breaker STRING`: DRY サンプリング用の区切り文字列を追加します。指定すると既定の区切り（`\n`, `:`, `"`, `*`）をクリアします。`none` を指定すると区切りを使いません。
+- `--adaptive-target N`: adaptive-p で、この確率付近のトークンを選ぶようにします（有効範囲: `0.0` から `1.0`、負値で無効。既定値: `-1.00`）。
+  - 詳細: <https://github.com/ggml-org/llama.cpp/pull/17927>
+- `--adaptive-decay N`: adaptive-p の目標値を時間経過で適応させる減衰率です。低い値ほど反応が速く、高い値ほど安定します（有効範囲: `0.0` から `0.99`、既定値: `0.90`）。
+- `--dynatemp-range N`: 動的温度の範囲を指定します（既定値: `0.00`、`0.0` で無効）。
+- `--dynatemp-exp N`: 動的温度の指数を指定します（既定値: `1.00`）。
+- `--mirostat N`: Mirostat サンプリングを使います。
+  - `Top K`, `Nucleus`, `Locally Typical` サンプラーは併用しても無視されます。
+  - 既定値: `0`（`0` は無効、`1` は Mirostat、`2` は Mirostat 2.0）
+- `--mirostat-lr N`: Mirostat の学習率 `eta` を指定します（既定値: `0.10`）。
+- `--mirostat-ent N`: Mirostat の目標エントロピー `tau` を指定します（既定値: `5.00`）。
+- `-l, --logit-bias TOKEN_ID(+/-)BIAS`: 特定トークンの出現しやすさを調整します。
+  - 例: `--logit-bias 15043+1` は `' Hello'` の出現しやすさを上げます。
+  - 例: `--logit-bias 15043-1` は `' Hello'` の出現しやすさを下げます。
+- `--grammar GRAMMAR`: BNF 風の文法で生成結果を制約します（`grammars/` ディレクトリのサンプル参照、既定値: `''`）。
+- `--grammar-file FNAME`: 文法をファイルから読み込みます。
+- `-j, --json-schema SCHEMA`: JSON Schema（<https://json-schema.org/>）で生成結果を制約します。たとえば `{}` は任意の JSON オブジェクトを意味します。
+  - 外部 `$refs` を含むスキーマでは、代わりに `--grammar` と `example/json_schema_to_grammar.py` を使ってください。
+- `-jf, --json-schema-file FILE`: JSON Schema をファイルから読み込み、生成結果を制約します。
+  - たとえば `{}` は任意の JSON オブジェクトを意味します。
+  - 外部 `$refs` を含むスキーマでは、代わりに `--grammar` と `example/json_schema_to_grammar.py` を使ってください。
+- `-bs, --backend-sampling`: バックエンド側サンプリングを有効にします（実験的、既定値: 無効）。
+  - `env: LLAMA_ARG_BACKEND_SAMPLING`
+
+## example-specific params
+
+- `-lcs, --lookup-cache-static FNAME`: 参照デコード用の静的 lookup cache のパスを指定します（生成では更新されません）。
+- `-lcd, --lookup-cache-dynamic FNAME`: 参照デコード用の動的 lookup cache のパスを指定します（生成で更新されます）。
+- `--ctx-checkpoints, --swa-checkpoints N`: スロットごとに作成するコンテキストチェックポイントの最大数を指定します（既定値: `8`）。
+  - 詳細: <https://github.com/ggml-org/llama.cpp/pull/15293>
+  - `env: LLAMA_ARG_CTX_CHECKPOINTS`
+- `-cram, --cache-ram N`: キャッシュの最大サイズを MiB で指定します（既定値: `8192`、`-1` は無制限、`0` は無効）。
+  - 詳細: <https://github.com/ggml-org/llama.cpp/pull/16391>
+  - `env: LLAMA_ARG_CACHE_RAM`
+- `-kvu, --kv-unified, -no-kvu, --no-kv-unified`: すべてのシーケンスで共有する単一の統合 KV バッファを使います（既定値: スロット数が自動設定のとき有効）。
+  - `env: LLAMA_ARG_KV_UNIFIED`
+- `--context-shift, --no-context-shift`: 無限テキスト生成時に context shift を使うかを設定します（既定値: 無効）。
+  - `env: LLAMA_ARG_CONTEXT_SHIFT`
+- `-r, --reverse-prompt PROMPT`: `PROMPT` で生成を停止し、対話モードで制御を返します。
+- `-sp, --special`: 特殊トークンの出力を有効にします（既定値: `false`）。
+- `--warmup, --no-warmup`: 空の実行によるウォームアップを行うかを設定します（既定値: 有効）。
+- `--spm-infill`: 一部モデルが好む `Suffix/Prefix/Middle` 順で infill を行います（通常の `Prefix/Suffix/Middle` の代わり、既定値: 無効）。
+- `--pooling {none,mean,cls,last,rank}`: 埋め込み用の pooling 方式を指定します。未指定時はモデル既定値を使います。
+  - `env: LLAMA_ARG_POOLING`
+- `-np, --parallel N`: サーバースロット数を指定します（既定値: `-1`、`-1` は自動）。
+  - `env: LLAMA_ARG_N_PARALLEL`
+- `-cb, --cont-batching, -nocb, --no-cont-batching`: continuous batching（動的バッチング）を有効にするかを設定します（既定値: 有効）。
+  - `env: LLAMA_ARG_CONT_BATCHING`
+- `-mm, --mmproj FILE`: マルチモーダルプロジェクタファイルのパスを指定します。`tools/mtmd/README.md` を参照してください。
+  - `-hf` を使う場合、この引数は省略できます。
+  - `env: LLAMA_ARG_MMPROJ`
+- `-mmu, --mmproj-url URL`: マルチモーダルプロジェクタファイルの URL を指定します。`tools/mtmd/README.md` を参照してください。
+  - `env: LLAMA_ARG_MMPROJ_URL`
+- `--mmproj-auto, --no-mmproj, --no-mmproj-auto`: マルチモーダルプロジェクタファイルを利用するかを設定します。`-hf` 使用時に便利です（既定値: 有効）。
+  - `env: LLAMA_ARG_MMPROJ_AUTO`
+- `--mmproj-offload, --no-mmproj-offload`: マルチモーダルプロジェクタの GPU オフロードを有効にするかを設定します（既定値: 有効）。
+  - `env: LLAMA_ARG_MMPROJ_OFFLOAD`
+- `--image-min-tokens N`: 各画像が使える最小トークン数を指定します。動的解像度のビジョンモデルでのみ使われます（既定値: モデルから読み込み）。
+  - `env: LLAMA_ARG_IMAGE_MIN_TOKENS`
+- `--image-max-tokens N`: 各画像が使える最大トークン数を指定します。動的解像度のビジョンモデルでのみ使われます（既定値: モデルから読み込み）。
+  - `env: LLAMA_ARG_IMAGE_MAX_TOKENS`
+- `-otd, --override-tensor-draft <tensor name pattern>=<buffer type>,...`: ドラフトモデル用のテンソルバッファ型を上書きします。
+- `-cmoed, --cpu-moe-draft`: ドラフトモデルのすべての MoE 重みを CPU に置きます。
+  - `env: LLAMA_ARG_CPU_MOE_DRAFT`
+- `-ncmoed, --n-cpu-moe-draft N`: ドラフトモデルの先頭 `N` 層の MoE 重みを CPU に置きます。
+  - `env: LLAMA_ARG_N_CPU_MOE_DRAFT`
+- `-a, --alias STRING`: API で使うモデル名エイリアスをカンマ区切りで指定します。
+  - `env: LLAMA_ARG_ALIAS`
+- `--tags STRING`: モデルタグをカンマ区切りで指定します（情報用途のみで、ルーティングには使いません）。
+  - `env: LLAMA_ARG_TAGS`
+- `--host HOST`: 待受 IP アドレスを指定します。アドレスが `.sock` で終わる場合は UNIX ソケットにバインドします（既定値: `127.0.0.1`）。
+  - `env: LLAMA_ARG_HOST`
+- `--port PORT`: 待受ポートを指定します（既定値: `8080`）。
+  - `env: LLAMA_ARG_PORT`
+- `--path PATH`: 配信する静的ファイルのパスを指定します（既定値: 空）。
+  - `env: LLAMA_ARG_STATIC_PATH`
+- `--api-prefix PREFIX`: サーバーが提供するパスのプレフィックスを指定します。末尾の `/` は含めません（既定値: 空）。
+  - `env: LLAMA_ARG_API_PREFIX`
+- `--webui-config JSON`: Web UI の既定設定を上書きする JSON を指定します。
+  - `env: LLAMA_ARG_WEBUI_CONFIG`
+- `--webui-config-file PATH`: Web UI の既定設定を上書きする JSON ファイルを指定します。
+  - `env: LLAMA_ARG_WEBUI_CONFIG_FILE`
+- `--webui, --no-webui`: Web UI を有効にするかを設定します（既定値: 有効）。
+  - `env: LLAMA_ARG_WEBUI`
+- `--embedding, --embeddings`: 埋め込み用途のみに限定します。専用の embedding モデルと一緒に使ってください（既定値: 無効）。
+  - `env: LLAMA_ARG_EMBEDDINGS`
+- `--rerank, --reranking`: サーバー上で reranking エンドポイントを有効にします（既定値: 無効）。
+  - `env: LLAMA_ARG_RERANKING`
+- `--api-key KEY`: 認証に使う API キーを指定します。複数指定時はカンマ区切りです（既定値: なし）。
+  - `env: LLAMA_API_KEY`
+- `--api-key-file FNAME`: API キーを含むファイルのパスを指定します（既定値: なし）。
+- `--ssl-key-file FNAME`: PEM 形式の SSL 秘密鍵ファイルのパスを指定します。
+  - `env: LLAMA_ARG_SSL_KEY_FILE`
+- `--ssl-cert-file FNAME`: PEM 形式の SSL 証明書ファイルのパスを指定します。
+  - `env: LLAMA_ARG_SSL_CERT_FILE`
+- `--chat-template-kwargs STRING`: JSON テンプレートパーサーに追加パラメータを渡します。有効な JSON オブジェクト文字列である必要があります。
+  - 例: `{"key1":"value1","key2":"value2"}`
+  - `env: LLAMA_CHAT_TEMPLATE_KWARGS`
+- `-to, --timeout N`: サーバーの読み書きタイムアウトを秒で指定します（既定値: `600`）。
+  - `env: LLAMA_ARG_TIMEOUT`
+- `--threads-http N`: HTTP リクエスト処理に使うスレッド数を指定します（既定値: `-1`）。
+  - `env: LLAMA_ARG_THREADS_HTTP`
+- `--cache-prompt, --no-cache-prompt`: プロンプトキャッシュを有効にするかを設定します（既定値: 有効）。
+  - `env: LLAMA_ARG_CACHE_PROMPT`
+- `--cache-reuse N`: KV シフト経由でキャッシュ再利用を試みる最小チャンクサイズを指定します。プロンプトキャッシュが有効である必要があります（既定値: `0`）。
+  - 参考カード: <https://ggml.ai/f0.png>
+  - `env: LLAMA_ARG_CACHE_REUSE`
+- `--metrics`: Prometheus 互換のメトリクスエンドポイントを有効にします（既定値: 無効）。
+  - `env: LLAMA_ARG_ENDPOINT_METRICS`
+- `--props`: `POST /props` でグローバルプロパティを変更できるようにします（既定値: 無効）。
+  - `env: LLAMA_ARG_ENDPOINT_PROPS`
+- `--slots, --no-slots`: スロット監視エンドポイントを公開するかを設定します（既定値: 有効）。
+  - `env: LLAMA_ARG_ENDPOINT_SLOTS`
+- `--slot-save-path PATH`: スロットの KV キャッシュ保存先パスを指定します（既定値: 無効）。
+- `--media-path PATH`: ローカルメディアファイルを読み込むディレクトリを指定します。相対パスの `file://` URL で参照できます（既定値: 無効）。
+- `--models-dir PATH`: ルーターサーバー用のモデル格納ディレクトリを指定します（既定値: 無効）。
+  - `env: LLAMA_ARG_MODELS_DIR`
+- `--models-preset PATH`: ルーターサーバー用のモデルプリセットを含む INI ファイルのパスを指定します（既定値: 無効）。
+  - `env: LLAMA_ARG_MODELS_PRESET`
+- `--models-max N`: ルーターサーバーで同時に読み込むモデル数の上限を指定します（既定値: `4`、`0` は無制限）。
+  - `env: LLAMA_ARG_MODELS_MAX`
+- `--models-autoload, --no-models-autoload`: ルーターサーバーでモデルを自動読み込みするかを設定します（既定値: 有効）。
+  - `env: LLAMA_ARG_MODELS_AUTOLOAD`
+- `--jinja, --no-jinja`: チャットで `jinja` テンプレートエンジンを使うかを設定します（既定値: 有効）。
+  - `env: LLAMA_ARG_JINJA`
+- `--reasoning-format FORMAT`: 思考タグを許可するか、抽出するか、および返却形式を制御します。
+  - `none`: 思考部分を解析せず `message.content` に残します。
+  - `deepseek`: 思考部分を `message.reasoning_content` に入れます。
+  - `deepseek-legacy`: `<think>` タグを `message.content` に残しつつ、`message.reasoning_content` にも格納します。
+  - 既定値: `auto`
+  - `env: LLAMA_ARG_THINK`
+- `--reasoning-budget N`: 思考に使える量を制御します。現状は `-1`（無制限）または `0`（思考無効）のみです（既定値: `-1`）。
+  - `env: LLAMA_ARG_THINK_BUDGET`
+- `--chat-template JINJA_TEMPLATE`: カスタム `jinja` チャットテンプレートを指定します（既定値: モデルメタデータ内のテンプレート）。
+  - `suffix` または `prefix` を指定するとテンプレートは無効になります。
+  - `--jinja` を先に指定しない限り、一般的なテンプレート名のみ受け付けます。
+  - 組み込みテンプレート一覧:
+    - `bailing`, `bailing-think`, `bailing2`, `chatglm3`, `chatglm4`, `chatml`
+    - `command-r`, `deepseek`, `deepseek2`, `deepseek3`, `exaone-moe`, `exaone3`
+    - `exaone4`, `falcon3`, `gemma`, `gigachat`, `glmedge`, `gpt-oss`, `granite`, `grok-2`
+    - `hunyuan-dense`, `hunyuan-moe`, `kimi-k2`, `llama2`, `llama2-sys`
+    - `llama2-sys-bos`, `llama2-sys-strip`, `llama3`, `llama4`, `megrez`, `minicpm`
+    - `mistral-v1`, `mistral-v3`, `mistral-v3-tekken`, `mistral-v7`
+    - `mistral-v7-tekken`, `monarch`, `openchat`, `orion`, `pangu-embedded`, `phi3`
+    - `phi4`, `rwkv-world`, `seed_oss`, `smolvlm`, `solar-open`, `vicuna`, `vicuna-orca`
+    - `yandex`, `zephyr`
+  - `env: LLAMA_ARG_CHAT_TEMPLATE`
+- `--chat-template-file JINJA_TEMPLATE_FILE`: カスタム `jinja` チャットテンプレートファイルを指定します（既定値: モデルメタデータ内のテンプレート）。
+  - `suffix` または `prefix` を指定するとテンプレートは無効になります。
+  - `--jinja` を先に指定しない限り、一般的なテンプレート名のみ受け付けます。
+  - 組み込みテンプレート一覧は `--chat-template` と同じです。
+  - `env: LLAMA_ARG_CHAT_TEMPLATE_FILE`
+- `--prefill-assistant, --no-prefill-assistant`: 最後のメッセージが assistant のとき、その応答を事前入力するかを設定します（既定値: prefill 有効）。
+  - このフラグを設定すると、最後のメッセージが assistant でも完全なメッセージとして扱われ、prefill されません。
+  - `env: LLAMA_ARG_PREFILL_ASSISTANT`
+- `-sps, --slot-prompt-similarity SIMILARITY`: 既存スロットを再利用するために、リクエストのプロンプトとスロットのプロンプトがどれだけ一致している必要があるかを指定します（既定値: `0.10`、`0.0` で無効）。
+- `--lora-init-without-apply`: LoRA アダプタを適用せずに読み込みます。後から `POST /lora-adapters` で適用できます（既定値: 無効）。
+- `--sleep-idle-seconds SECONDS`: 指定秒数だけアイドル状態が続くとサーバーをスリープさせます（既定値: `-1`、`-1` は無効）。
+- `-td, --threads-draft N`: ドラフト生成時のスレッド数を指定します（既定値: `--threads` と同じ）。
+- `-tbd, --threads-batch-draft N`: ドラフトのバッチ処理・プロンプト処理に使うスレッド数を指定します（既定値: `--threads-draft` と同じ）。
+- `--draft, --draft-n, --draft-max N`: speculative decoding 用にドラフトするトークン数を指定します（既定値: `16`）。
+  - `env: LLAMA_ARG_DRAFT_MAX`
+- `--draft-min, --draft-n-min N`: speculative decoding で使う最小ドラフトトークン数を指定します（既定値: `0`）。
+  - `env: LLAMA_ARG_DRAFT_MIN`
+- `--draft-p-min P`: speculative decoding の最小確率（greedy）を指定します（既定値: `0.75`）。
+  - `env: LLAMA_ARG_DRAFT_P_MIN`
+- `-cd, --ctx-size-draft N`: ドラフトモデル用のプロンプトコンテキストサイズを指定します（既定値: `0`、`0` はモデルから読み込み）。
+  - `env: LLAMA_ARG_CTX_SIZE_DRAFT`
+- `-devd, --device-draft <dev1,dev2,..>`: ドラフトモデルのオフロードに使うデバイスをカンマ区切りで指定します（`none` はオフロードしない）。
+  - 利用可能なデバイス一覧は `--list-devices` で確認できます。
+- `-ngld, --gpu-layers-draft, --n-gpu-layers-draft N`: ドラフトモデルで VRAM に置くレイヤー数の上限を指定します。正確な数値、`auto`、`all` を使えます（既定値: `auto`）。
+  - `env: LLAMA_ARG_N_GPU_LAYERS_DRAFT`
+- `-md, --model-draft FNAME`: speculative decoding 用のドラフトモデルを指定します（既定値: 未使用）。
+  - `env: LLAMA_ARG_MODEL_DRAFT`
+- `--spec-replace TARGET DRAFT`: ドラフトモデルとメインモデルに互換性がない場合、`TARGET` 内の文字列を `DRAFT` に置換します。
+- `--spec-type [none|ngram-cache|ngram-simple|ngram-map-k|ngram-map-k4v|ngram-mod]`: ドラフトモデルがない場合に使う speculative decoding の種類を指定します（既定値: `none`）。
+- `--spec-ngram-size-n N`: `ngram-simple` または `ngram-map` で使う `N` を指定します。lookup 用 n-gram の長さです（既定値: `12`）。
+- `--spec-ngram-size-m N`: `ngram-simple` または `ngram-map` で使う `M` を指定します。draft 用 m-gram の長さです（既定値: `48`）。
+- `--spec-ngram-min-hits N`: `ngram-map` を使う speculative decoding で必要な最小ヒット数を指定します（既定値: `1`）。
+- `-mv, --model-vocoder FNAME`: 音声生成用のボコーダーモデルを指定します（既定値: 未使用）。
+- `--tts-use-guide-tokens`: TTS の単語再現性を高めるために guide tokens を使います。
+- `--embd-gemma-default`: 既定の `EmbeddingGemma` モデルを使います（注: インターネットから重みをダウンロードする場合があります）。
+- `--fim-qwen-1.5b-default`: 既定の `Qwen 2.5 Coder 1.5B` を使います（注: インターネットから重みをダウンロードする場合があります）。
+- `--fim-qwen-3b-default`: 既定の `Qwen 2.5 Coder 3B` を使います（注: インターネットから重みをダウンロードする場合があります）。
+- `--fim-qwen-7b-default`: 既定の `Qwen 2.5 Coder 7B` を使います（注: インターネットから重みをダウンロードする場合があります）。
+- `--fim-qwen-7b-spec`: `Qwen 2.5 Coder 7B + 0.5B` ドラフトを使って speculative decoding を行います（注: インターネットから重みをダウンロードする場合があります）。
+- `--fim-qwen-14b-spec`: `Qwen 2.5 Coder 14B + 0.5B` ドラフトを使って speculative decoding を行います（注: インターネットから重みをダウンロードする場合があります）。
+- `--fim-qwen-30b-default`: 既定の `Qwen 3 Coder 30B A3B Instruct` を使います（注: インターネットから重みをダウンロードする場合があります）。
+- `--gpt-oss-20b-default`: `gpt-oss-20b` を使います（注: インターネットから重みをダウンロードする場合があります）。
+- `--gpt-oss-120b-default`: `gpt-oss-120b` を使います（注: インターネットから重みをダウンロードする場合があります）。
+- `--vision-gemma-4b-default`: `Gemma 3 4B QAT` を使います（注: インターネットから重みをダウンロードする場合があります）。
+- `--vision-gemma-12b-default`: `Gemma 3 12B QAT` を使います（注: インターネットから重みをダウンロードする場合があります）。
