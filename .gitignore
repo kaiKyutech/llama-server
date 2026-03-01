@@ -1,0 +1,7 @@
+models/
+llama.cpp/
+__pycache__/
+*.pyc
+.env
+*.gguf
+*.deb
