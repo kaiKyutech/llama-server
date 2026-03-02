@@ -80,21 +80,35 @@ def chat_once(client: httpx.Client, url: str, model: str, messages: list) -> tup
     return full_response, token_count, elapsed
 
 
+def get_model_name(client: httpx.Client, url: str, fallback: str) -> str:
+    """サーバーから実際のモデル名を取得する"""
+    try:
+        resp = client.get(f"{url}/v1/models", timeout=5.0)
+        models = resp.json().get("data", [])
+        if models:
+            return models[0].get("id", fallback)
+    except Exception:
+        pass
+    return fallback
+
+
 def main():
     parser = argparse.ArgumentParser(description="llama-server インタラクティブチャット")
     parser.add_argument("--url", default="http://localhost:8080", help="llama-server の URL (デフォルト: http://localhost:8080)")
-    parser.add_argument("--model", default="qwen3-vl-8b", help="モデル名 (デフォルト: qwen3-vl-8b)")
+    parser.add_argument("--model", default=None, help="モデル名（省略時はサーバーから自動取得）")
     parser.add_argument("--system", default="You are a helpful assistant.", help="システムプロンプト")
     args = parser.parse_args()
 
     history = [{"role": "system", "content": args.system}]
 
-    print(f"接続先: {args.url}")
-    print(f"モデル: {args.model}")
-    print("終了: q または Ctrl+C")
-    print("-" * 40)
-
     with httpx.Client() as client:
+        model = args.model or get_model_name(client, args.url, "default")
+
+        print(f"接続先: {args.url}")
+        print(f"モデル: {model}")
+        print("終了: q または Ctrl+C")
+        print("-" * 40)
+
         while True:
             try:
                 user_input = input("\nYou: ").strip()
@@ -110,7 +124,7 @@ def main():
             print("Assistant: ", end="", flush=True)
 
             try:
-                full_response, token_count, elapsed = chat_once(client, args.url, args.model, history)
+                full_response, token_count, elapsed = chat_once(client, args.url, model, history)
             except KeyboardInterrupt:
                 print("\n[中断]")
                 history.pop()

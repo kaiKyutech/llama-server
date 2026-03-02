@@ -24,6 +24,7 @@ llama-server/
 │   └── cpu_gpu.sh              # CPU+GPU 混合モード設定
 ├── scripts/
 │   ├── start.sh                # llama-server 起動スクリプト
+│   ├── tunnel.sh               # Cloudflare クイックトンネル起動
 │   ├── chat.py                 # インタラクティブチャット
 │   └── bench.py                # 並列ベンチマーク
 └── models/                     # モデルファイル置き場（git 管理外）
@@ -142,6 +143,35 @@ uv run scripts/bench.py
 # オプション指定
 uv run scripts/bench.py --sessions 4 --prompt "やあ私は立夏。そちらも自己紹介お願い。"
 ```
+
+---
+
+## Cloudflare トンネル（外部公開）
+
+llama-server とは独立して起動する。llama-server を再起動してもトンネルは維持される。
+
+### cloudflared のインストール
+
+```bash
+curl -L -o cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+sudo dpkg -i cloudflared.deb
+```
+
+### トンネル起動（別ターミナルで）
+
+```bash
+chmod +x scripts/tunnel.sh
+./scripts/tunnel.sh          # ポート 8080（デフォルト）
+./scripts/tunnel.sh 8081     # ポートを変える場合
+```
+
+起動後のログに公開 URL が表示される：
+
+```
+https://xxxx.trycloudflare.com
+```
+
+この URL に OpenAI 互換 API としてアクセスできる。
 
 ---
 

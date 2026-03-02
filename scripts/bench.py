@@ -143,15 +143,28 @@ async def run_bench(url: str, model: str, sessions: int, prompt: str):
         print(f"総スループット : {total_tokens / total_elapsed:.1f} tok/s")
 
 
+def get_model_name(url: str, fallback: str) -> str:
+    """サーバーから実際のモデル名を取得する"""
+    try:
+        resp = httpx.get(f"{url}/v1/models", timeout=5.0)
+        models = resp.json().get("data", [])
+        if models:
+            return models[0].get("id", fallback)
+    except Exception:
+        pass
+    return fallback
+
+
 def main():
     parser = argparse.ArgumentParser(description="llama-server 並列ベンチマーク")
     parser.add_argument("--url", default="http://localhost:8080", help="llama-server の URL (デフォルト: http://localhost:8080)")
-    parser.add_argument("--model", default="qwen3-vl-8b", help="モデル名 (デフォルト: qwen3-vl-8b)")
+    parser.add_argument("--model", default=None, help="モデル名（省略時はサーバーから自動取得）")
     parser.add_argument("--sessions", type=int, default=4, help="並列セッション数 (デフォルト: 4)")
     parser.add_argument("--prompt", default=DEFAULT_PROMPT, help="テスト用プロンプト")
     args = parser.parse_args()
 
-    asyncio.run(run_bench(args.url, args.model, args.sessions, args.prompt))
+    model = args.model or get_model_name(args.url, "default")
+    asyncio.run(run_bench(args.url, model, args.sessions, args.prompt))
 
 
 if __name__ == "__main__":
