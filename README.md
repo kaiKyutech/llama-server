@@ -161,9 +161,21 @@ llama-server とは独立して起動する。llama-server を再起動しても
 
 ### cloudflared のインストール
 
+**sudo が使える環境：**
+
 ```bash
 curl -L -o cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
 sudo dpkg -i cloudflared.deb
+```
+
+**sudo が使えない環境（JupyterHub 等）：**
+
+```bash
+mkdir -p ~/bin
+curl -L -o ~/bin/cloudflared https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64
+chmod +x ~/bin/cloudflared
+echo 'export PATH="$HOME/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
 ```
 
 ### トンネル起動（別ターミナルで）
