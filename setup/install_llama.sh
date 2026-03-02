@@ -20,8 +20,21 @@ CUDA_ARCH="${CUDA_ARCH:-native}"
 echo "CUDA_ARCH: $CUDA_ARCH"
 
 echo "=== 依存パッケージのインストール ==="
-sudo apt-get update
-sudo apt-get install -y cmake build-essential libcurl4-openssl-dev
+if sudo -n true 2>/dev/null; then
+    # sudo が使える環境（A100 等）: apt-get でインストール
+    sudo apt-get update
+    sudo apt-get install -y cmake build-essential libcurl4-openssl-dev
+elif command -v conda &>/dev/null; then
+    # sudo なし + conda 環境（JupyterHub 等）: conda でインストール
+    echo "sudo が使えないため conda でインストールします..."
+    conda install -y -c conda-forge cmake libcurl compilers
+    conda install -y -c nvidia cuda-toolkit
+    # CUDA_PATH が未設定の場合は conda prefix を自動設定
+    CUDA_PATH="${CUDA_PATH:-${CONDA_PREFIX}}"
+    echo "CUDA_PATH: ${CUDA_PATH}"
+else
+    echo "sudo も conda もないためインストールをスキップします（cmake/gcc が利用可能とみなします）"
+fi
 
 echo "=== llama.cpp のクローン ==="
 if [ -d "$LLAMA_DIR" ]; then
