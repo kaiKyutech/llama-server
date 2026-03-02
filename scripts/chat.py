@@ -1,33 +1,75 @@
 #!/usr/bin/env python3
 # /// script
 # requires-python = ">=3.10"
-# dependencies = ["openai>=1.0"]
+# dependencies = ["httpx>=0.25"]
 # ///
 """
 llama-server インタラクティブチャット
 
 使い方:
   uv run scripts/chat.py
-  uv run scripts/chat.py --url http://localhost:8080/v1
+  uv run scripts/chat.py --url http://localhost:8080
   uv run scripts/chat.py --system "あなたは優秀なアシスタントです"
 
 終了: q, quit, exit または Ctrl+C
 """
 
-import sys
+import json
 import time
 import argparse
-from openai import OpenAI
+import httpx
+
+
+def chat_once(client: httpx.Client, url: str, model: str, messages: list) -> tuple[str, int, float]:
+    """1回の応答をストリーミングで受け取り (full_response, token_count, elapsed) を返す"""
+    payload = {
+        "model": model,
+        "messages": messages,
+        "stream": True,
+        "stream_options": {"include_usage": True},
+    }
+
+    start_time = None
+    token_count = 0
+    full_response = ""
+
+    with client.stream("POST", f"{url}/v1/chat/completions", json=payload, timeout=300.0) as response:
+        for line in response.iter_lines():
+            if not line.startswith("data: "):
+                continue
+            data = line[6:]
+            if data == "[DONE]":
+                break
+            try:
+                chunk = json.loads(data)
+            except json.JSONDecodeError:
+                continue
+
+            choices = chunk.get("choices", [])
+            if choices:
+                content = choices[0].get("delta", {}).get("content", "")
+                if content:
+                    if start_time is None:
+                        start_time = time.perf_counter()
+                    print(content, end="", flush=True)
+                    full_response += content
+
+            # ストリーム末尾のチャンクに usage が含まれる
+            usage = chunk.get("usage")
+            if usage:
+                token_count = usage.get("completion_tokens", 0)
+
+    elapsed = time.perf_counter() - start_time if start_time else 0
+    return full_response, token_count, elapsed
 
 
 def main():
     parser = argparse.ArgumentParser(description="llama-server インタラクティブチャット")
-    parser.add_argument("--url", default="http://localhost:8080/v1", help="llama-server の URL (デフォルト: http://localhost:8080/v1)")
+    parser.add_argument("--url", default="http://localhost:8080", help="llama-server の URL (デフォルト: http://localhost:8080)")
     parser.add_argument("--model", default="qwen3-vl-8b", help="モデル名 (デフォルト: qwen3-vl-8b)")
     parser.add_argument("--system", default="You are a helpful assistant.", help="システムプロンプト")
     args = parser.parse_args()
 
-    client = OpenAI(base_url=args.url, api_key="dummy")
     history = [{"role": "system", "content": args.system}]
 
     print(f"接続先: {args.url}")
@@ -35,66 +77,39 @@ def main():
     print("終了: q または Ctrl+C")
     print("-" * 40)
 
-    while True:
-        try:
-            user_input = input("\nYou: ").strip()
-        except (EOFError, KeyboardInterrupt):
-            print("\n終了します")
-            break
+    with httpx.Client() as client:
+        while True:
+            try:
+                user_input = input("\nYou: ").strip()
+            except (EOFError, KeyboardInterrupt):
+                print("\n終了します")
+                break
 
-        if not user_input or user_input.lower() in ("q", "quit", "exit"):
-            print("終了します")
-            break
+            if not user_input or user_input.lower() in ("q", "quit", "exit"):
+                print("終了します")
+                break
 
-        history.append({"role": "user", "content": user_input})
-        print("Assistant: ", end="", flush=True)
+            history.append({"role": "user", "content": user_input})
+            print("Assistant: ", end="", flush=True)
 
-        start_time = None
-        token_count = 0
-        full_response = ""
+            try:
+                full_response, token_count, elapsed = chat_once(client, args.url, args.model, history)
+            except KeyboardInterrupt:
+                print("\n[中断]")
+                history.pop()
+                continue
+            except Exception as e:
+                print(f"\nエラー: {e}")
+                history.pop()
+                continue
 
-        try:
-            stream = client.chat.completions.create(
-                model=args.model,
-                messages=history,
-                stream=True,
-                stream_options={"include_usage": True},
-            )
+            if elapsed > 0 and token_count > 0:
+                tps = token_count / elapsed
+                print(f"\n[{token_count} tokens | {tps:.1f} tok/s | {elapsed:.2f}s]")
+            else:
+                print()
 
-            for chunk in stream:
-                if chunk.choices and chunk.choices[0].delta.content:
-                    content = chunk.choices[0].delta.content
-                    if start_time is None:
-                        start_time = time.perf_counter()
-                    print(content, end="", flush=True)
-                    full_response += content
-
-                # ストリーム末尾のチャンクに usage が含まれる
-                if hasattr(chunk, "usage") and chunk.usage:
-                    token_count = chunk.usage.completion_tokens or 0
-
-        except KeyboardInterrupt:
-            print("\n[中断]")
-            history.pop()
-            continue
-        except Exception as e:
-            print(f"\nエラー: {e}")
-            history.pop()
-            continue
-
-        elapsed = time.perf_counter() - start_time if start_time else 0
-
-        # usage が取れなかった場合は文字数から推定（参考値）
-        if token_count == 0 and full_response:
-            token_count = len(full_response) // 4
-
-        if elapsed > 0 and token_count > 0:
-            tps = token_count / elapsed
-            print(f"\n[{token_count} tokens | {tps:.1f} tok/s | {elapsed:.2f}s]")
-        else:
-            print()
-
-        history.append({"role": "assistant", "content": full_response})
+            history.append({"role": "assistant", "content": full_response})
 
 
 if __name__ == "__main__":

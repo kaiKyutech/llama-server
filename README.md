@@ -140,7 +140,7 @@ uv run scripts/chat.py --url http://localhost:8080/v1 --model qwen3-vl-8b
 uv run scripts/bench.py
 
 # オプション指定
-uv run scripts/bench.py --sessions 4 --prompt "日本の歴史について説明して"
+uv run scripts/bench.py --sessions 4 --prompt "やあ私は立夏。そちらも自己紹介お願い。"
 ```
 
 ---
