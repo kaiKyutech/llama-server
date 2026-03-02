@@ -20,11 +20,19 @@ CUDA_ARCH="${CUDA_ARCH:-native}"
 echo "CUDA_ARCH: $CUDA_ARCH"
 
 echo "=== 依存パッケージのインストール ==="
-if sudo -n true 2>/dev/null; then
-    # sudo が使える環境（A100 等）: apt-get でインストール
+if command -v conda &>/dev/null; then
+    # conda 環境（JupyterHub 等）: conda でインストール（優先）
+    echo "conda でインストールします..."
+    conda install -y -c conda-forge cmake libcurl compilers
+    conda install -y -c nvidia cuda-toolkit
+    # CUDA_PATH が未設定の場合は conda prefix を自動設定
+    CUDA_PATH="${CUDA_PATH:-${CONDA_PREFIX}}"
+    echo "CUDA_PATH: ${CUDA_PATH}"
+elif sudo -n true 2>/dev/null; then
+    # conda なし + sudo が使える環境: apt-get でインストール
+    echo "apt-get でインストールします..."
     sudo apt-get update
     sudo apt-get install -y cmake build-essential libcurl4-openssl-dev
-    # libcublas-dev はバージョン付きパッケージ名で提供されることがあるため動的に検索
     CUBLAS_PKG=$(apt-cache search '^libcublas-dev' 2>/dev/null | awk '{print $1}' | sort -V | tail -1)
     if [ -n "$CUBLAS_PKG" ]; then
         echo "cublas dev パッケージ: $CUBLAS_PKG"
@@ -32,16 +40,8 @@ if sudo -n true 2>/dev/null; then
     else
         echo "警告: libcublas-dev が見つかりませんでした。ビルドに失敗する場合は手動でインストールしてください。"
     fi
-elif command -v conda &>/dev/null; then
-    # sudo なし + conda 環境（JupyterHub 等）: conda でインストール
-    echo "sudo が使えないため conda でインストールします..."
-    conda install -y -c conda-forge cmake libcurl compilers
-    conda install -y -c nvidia cuda-toolkit
-    # CUDA_PATH が未設定の場合は conda prefix を自動設定
-    CUDA_PATH="${CUDA_PATH:-${CONDA_PREFIX}}"
-    echo "CUDA_PATH: ${CUDA_PATH}"
 else
-    echo "sudo も conda もないためインストールをスキップします（cmake/gcc が利用可能とみなします）"
+    echo "conda も sudo もないためインストールをスキップします（cmake/gcc が利用可能とみなします）"
 fi
 
 echo "=== llama.cpp のクローン ==="
