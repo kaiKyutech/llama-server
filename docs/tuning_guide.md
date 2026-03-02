@@ -145,18 +145,50 @@ CUDA0 model buffer size = 4455.34 MiB  ← モデル本体の VRAM 使用量
 
 **前提：** GPU がない環境、または GPU を使わず動かしたい場合。
 
-**チューニングのポイント：**
+### RAM 使用量の注意
 
-1. `N_GPU_LAYERS=0` で全層 CPU に
+CPU only では `--fit` が効かない。`CTX_SIZE` を指定しないとモデルのデフォルト（例：Qwen3 は 262144 トークン）が使われ、KV キャッシュだけで数十 GB になりサーバーが応答不能になる。
+
+**`CTX_SIZE` と `PARALLEL` は必ず明示指定すること。**
+
+```
+# CTX_SIZE と PARALLEL を指定しなかった場合の例（危険）
+llama_kv_cache: CPU KV buffer size = 36864.00 MiB   ← 36GB！
+```
+
+KV キャッシュのサイズの目安：
+```
+CTX_SIZE=8192  × PARALLEL=1 → 約 1.2GB（安全）
+CTX_SIZE=8192  × PARALLEL=4 → 約 4.8GB
+CTX_SIZE=32768 × PARALLEL=4 → 約 19GB（RAM 不足の可能性）
+```
+
+### `parallel=-1`（auto）について
+
+CPU only では `--fit` が VRAM 向けの機能のため auto が正しく機能しない。
+`PARALLEL` は必ず明示指定すること。
+
+### mmproj（ビジョンエンコーダー）は GPU を使い続ける
+
+マルチモーダルモデルの場合、`N_GPU_LAYERS=0` でも mmproj は GPU を使用する。
+```
+clip_ctx: CLIP using CUDA0 backend   ← N_GPU_LAYERS=0 でも GPU を使う（正常）
+```
+完全に GPU を使わないようにするには `--no-mmproj` を指定するか、テキストのみモデルを使う。
+
+### チューニングのポイント
+
+1. `CTX_SIZE` と `PARALLEL` を必ず明示指定する
 2. `THREADS` を論理コア数に合わせる（`nproc` コマンドで確認）
 3. `MLOCK=true` でモデルを RAM に固定（スワップ防止）
-4. 並列数は増やさず `PARALLEL=1` か `2` 程度にとどめる
+4. 並列数は `PARALLEL=1` か `2` 程度にとどめる
 
 ```sh
 N_GPU_LAYERS=0
+CTX_SIZE=8192     # 必須：指定しないと数十GB のKVキャッシュが確保される
+PARALLEL=1        # 必須：auto は CPU only では機能しない
 THREADS=16        # nproc の出力に合わせる
 MLOCK=true
-PARALLEL=1
 ```
 
 **確認コマンド：**
@@ -233,3 +265,5 @@ uv run scripts/bench.py --sessions 1
 | 遅い（GPU なのに） | `offloaded N/M` の N < M → `N_GPU_LAYERS` を増やす |
 | コンテキストが短い | `context size reduced` → `CTX_SIZE` を明示指定するか並列数を減らす |
 | tok/s が想定より低い | `n_parallel` を確認、並列数が多すぎると1リクエストが遅くなる |
+| CPU only で 503 エラー | KV キャッシュが RAM を使い果たしている → `CTX_SIZE` と `PARALLEL` を明示指定 |
+| CPU only で起動が極端に遅い | `CPU KV buffer size` が数十GB → 同上 |

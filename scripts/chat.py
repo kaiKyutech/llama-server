@@ -32,6 +32,11 @@ def chat_once(client: httpx.Client, url: str, model: str, messages: list) -> tup
     start_time = None
     token_count = 0
     full_response = ""
+    thinking_started = False
+    thinking_ended = False
+
+    DIM = "\033[2m"
+    RESET = "\033[0m"
 
     with client.stream("POST", f"{url}/v1/chat/completions", json=payload, timeout=300.0) as response:
         for line in response.iter_lines():
@@ -47,8 +52,20 @@ def chat_once(client: httpx.Client, url: str, model: str, messages: list) -> tup
 
             choices = chunk.get("choices", [])
             if choices:
-                content = choices[0].get("delta", {}).get("content", "")
+                delta = choices[0].get("delta", {})
+
+                reasoning = delta.get("reasoning_content", "")
+                if reasoning:
+                    if not thinking_started:
+                        print(f"{DIM}[thinking]{RESET}", flush=True)
+                        thinking_started = True
+                    print(f"{DIM}{reasoning}{RESET}", end="", flush=True)
+
+                content = delta.get("content", "")
                 if content:
+                    if thinking_started and not thinking_ended:
+                        print(f"\n{DIM}[/thinking]{RESET}\n", flush=True)
+                        thinking_ended = True
                     if start_time is None:
                         start_time = time.perf_counter()
                     print(content, end="", flush=True)
