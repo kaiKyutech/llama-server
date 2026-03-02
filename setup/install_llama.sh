@@ -23,7 +23,12 @@ echo "=== 依存パッケージのインストール ==="
 if sudo -n true 2>/dev/null; then
     # sudo が使える環境（A100 等）: apt-get でインストール
     sudo apt-get update
-    sudo apt-get install -y cmake build-essential libcurl4-openssl-dev
+    sudo apt-get install -y cmake build-essential libcurl4-openssl-dev libcublas-dev
+    # システム CUDA があれば CUDA_PATH を自動設定（conda の nvcc と混在する環境向け）
+    if [ -d /usr/local/cuda ] && [ -z "${CUDA_PATH:-}" ]; then
+        CUDA_PATH=/usr/local/cuda
+        echo "CUDA_PATH: ${CUDA_PATH}"
+    fi
 elif command -v conda &>/dev/null; then
     # sudo なし + conda 環境（JupyterHub 等）: conda でインストール
     echo "sudo が使えないため conda でインストールします..."
