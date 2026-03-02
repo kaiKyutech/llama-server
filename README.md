@@ -73,6 +73,15 @@ CUDA_ARCH=0  ./setup/install_llama.sh   # CPU only（CUDA 不要）
 ./setup/install_llama.sh
 ```
 
+### 再ビルド（ビルドエラー後やクリーンビルドしたい場合）
+
+`llama.cpp` 本体は残したままビルドディレクトリだけ削除して再実行する。
+
+```bash
+rm -rf llama.cpp/build
+./setup/install_llama.sh
+```
+
 ### 4. モデルを配置
 
 ```bash
