@@ -23,7 +23,15 @@ echo "=== 依存パッケージのインストール ==="
 if sudo -n true 2>/dev/null; then
     # sudo が使える環境（A100 等）: apt-get でインストール
     sudo apt-get update
-    sudo apt-get install -y cmake build-essential libcurl4-openssl-dev libcublas-dev
+    sudo apt-get install -y cmake build-essential libcurl4-openssl-dev
+    # libcublas-dev はバージョン付きパッケージ名で提供されることがあるため動的に検索
+    CUBLAS_PKG=$(apt-cache search '^libcublas-dev' 2>/dev/null | awk '{print $1}' | sort -V | tail -1)
+    if [ -n "$CUBLAS_PKG" ]; then
+        echo "cublas dev パッケージ: $CUBLAS_PKG"
+        sudo apt-get install -y "$CUBLAS_PKG"
+    else
+        echo "警告: libcublas-dev が見つかりませんでした。ビルドに失敗する場合は手動でインストールしてください。"
+    fi
     # システム CUDA があれば CUDA_PATH を自動設定（conda の nvcc と混在する環境向け）
     if [ -d /usr/local/cuda ] && [ -z "${CUDA_PATH:-}" ]; then
         CUDA_PATH=/usr/local/cuda
