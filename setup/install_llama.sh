@@ -32,11 +32,6 @@ if sudo -n true 2>/dev/null; then
     else
         echo "警告: libcublas-dev が見つかりませんでした。ビルドに失敗する場合は手動でインストールしてください。"
     fi
-    # システム CUDA があれば CUDA_PATH を自動設定（conda の nvcc と混在する環境向け）
-    if [ -d /usr/local/cuda ] && [ -z "${CUDA_PATH:-}" ]; then
-        CUDA_PATH=/usr/local/cuda
-        echo "CUDA_PATH: ${CUDA_PATH}"
-    fi
 elif command -v conda &>/dev/null; then
     # sudo なし + conda 環境（JupyterHub 等）: conda でインストール
     echo "sudo が使えないため conda でインストールします..."
@@ -57,6 +52,12 @@ if [ -d "$LLAMA_DIR" ]; then
 else
     git clone https://github.com/ggerganov/llama.cpp "$LLAMA_DIR"
     cd "$LLAMA_DIR"
+fi
+
+# システム CUDA があれば CUDA_PATH を自動設定（インストール方法に関係なく）
+if [ -z "${CUDA_PATH:-}" ] && [ -d /usr/local/cuda ]; then
+    CUDA_PATH=/usr/local/cuda
+    echo "CUDA_PATH を自動設定: ${CUDA_PATH}"
 fi
 
 echo "=== CUDA 対応でビルド (ARCH=$CUDA_ARCH) ==="
