@@ -38,6 +38,7 @@ cmake -B build \
     -DGGML_CUDA=ON \
     -DCMAKE_CUDA_ARCHITECTURES="$CUDA_ARCH" \
     -DCMAKE_BUILD_TYPE=Release \
+    ${CUDA_PATH:+-DCUDAToolkit_ROOT="${CUDA_PATH}"} \
     ${CUDA_PATH:+-DCMAKE_CUDA_FLAGS="-I${CUDA_PATH}/include"}
 
 cmake --build build --config Release -j$(nproc)
