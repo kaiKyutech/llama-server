@@ -37,7 +37,8 @@ echo "=== CUDA 対応でビルド (ARCH=$CUDA_ARCH) ==="
 cmake -B build \
     -DGGML_CUDA=ON \
     -DCMAKE_CUDA_ARCHITECTURES="$CUDA_ARCH" \
-    -DCMAKE_BUILD_TYPE=Release
+    -DCMAKE_BUILD_TYPE=Release \
+    ${CUDA_PATH:+-DCMAKE_CUDA_FLAGS="-I${CUDA_PATH}/include"}
 
 cmake --build build --config Release -j$(nproc)
 
