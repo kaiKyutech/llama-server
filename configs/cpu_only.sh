@@ -54,10 +54,12 @@ PORT=8080
 # THREADS_HTTP=-1
 
 # -----------------------------------------------------------------------------
-# 思考モード
+# 思考モード（Qwen3 等の reasoning モデル向け）
 # -----------------------------------------------------------------------------
-# REASONING_FORMAT="auto"
-# REASONING_BUDGET=-1
+# thinking ON: CHAT_TEMPLATE_KWARGS='{"enable_thinking": true}' のコメントを外す
+# thinking OFF: REASONING_BUDGET=0 のコメントを外す（上の行はコメントのまま）
+# CHAT_TEMPLATE_KWARGS='{"enable_thinking": true}'
+# REASONING_BUDGET=0
 
 # -----------------------------------------------------------------------------
 # プロセス優先度

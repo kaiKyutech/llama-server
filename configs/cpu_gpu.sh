@@ -9,9 +9,9 @@
 # -----------------------------------------------------------------------------
 # モデル（必須）
 # -----------------------------------------------------------------------------
-MODEL_PATH="models/Qwen3.5-35B-A3B-GGUF/Qwen3.5-35B-A3B-UD-Q4_K_XL.gguf"
+MODEL_PATH="models/qwen3.5/Qwen3.5-9B-UD-Q5_K_XL.gguf"
 #MODEL_PATH="models/Qwen3.5-27B-GGUF/Qwen3.5-27B-UD-Q4_K_XL.gguf"
-#MMPROJ_PATH="models/Qwen3-VL-8B-Instruct-GGUF/mmproj-Qwen3-VL-8B-Instruct-F16.gguf"
+#MMPROJ_PATH="models/qwen3.5/mmproj-F32.gguf"
 # ALIAS=""
 
 # -----------------------------------------------------------------------------
@@ -37,7 +37,7 @@ N_GPU_LAYERS=auto                 # VRAM に収まる最大層数を自動計算
 # メモリ
 # -----------------------------------------------------------------------------
 # MLOCK=false                     # RAM 側のモデルをスワップさせたくない場合は true
-#CTX_SIZE=8192                     # 固定推奨: 未指定だと --fit がコンテキストを削る場合あり
+CTX_SIZE=8192                     # 固定推奨: 未指定だと --fit がコンテキストを削る場合あり
 # BATCH_SIZE=2048
 # UBATCH_SIZE=512
 # CACHE_TYPE_K="f16"              # q8_0 にすると KV キャッシュの VRAM 使用量を半減できる
@@ -60,9 +60,11 @@ PORT=8080
 # THREADS_HTTP=-1
 
 # -----------------------------------------------------------------------------
-# 思考モード
+# 思考モード（Qwen3 等の reasoning モデル向け）
 # -----------------------------------------------------------------------------
-# REASONING_FORMAT="auto"
+# thinking ON: CHAT_TEMPLATE_KWARGS='{"enable_thinking": true}' のコメントを外す
+# thinking OFF: REASONING_BUDGET=0 のコメントを外す（上の行はコメントのまま）
+#CHAT_TEMPLATE_KWARGS='{"enable_thinking": true}'
 REASONING_BUDGET=0
 
 # -----------------------------------------------------------------------------

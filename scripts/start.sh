@@ -128,8 +128,10 @@ CMD+=(--model "$MODEL_PATH")
 [ -n "${API_KEY:-}" ]           && CMD+=(--api-key "$API_KEY")
 [ -n "${TIMEOUT:-}" ]           && CMD+=(--timeout "$TIMEOUT")
 [ -n "${THREADS_HTTP:-}" ]      && CMD+=(--threads-http "$THREADS_HTTP")
-[ -n "${REASONING_FORMAT:-}" ]  && CMD+=(--reasoning-format "$REASONING_FORMAT")
-[ -n "${REASONING_BUDGET:-}" ]  && CMD+=(--reasoning-budget "$REASONING_BUDGET")
+[ "${JINJA:-}" = "true" ]              && CMD+=(--jinja)
+[ -n "${REASONING_FORMAT:-}" ]        && CMD+=(--reasoning-format "$REASONING_FORMAT")
+[ -n "${REASONING_BUDGET:-}" ]        && CMD+=(--reasoning-budget "$REASONING_BUDGET")
+[ -n "${CHAT_TEMPLATE_KWARGS:-}" ]    && CMD+=(--chat-template-kwargs "$CHAT_TEMPLATE_KWARGS")
 [ -n "${LOG_VERBOSITY:-}" ]     && CMD+=(--verbosity "$LOG_VERBOSITY")
 
 echo "設定ファイル: $CONFIG_FILE"

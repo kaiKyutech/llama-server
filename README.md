@@ -155,6 +155,26 @@ uv run scripts/bench.py --sessions 4 --prompt "やあ私は立夏。そちらも
 
 ---
 
+## thinking モードの制御（Qwen3 等）
+
+サーバー起動時に決まり、全クライアントに一律適用される。クライアント側での指定は不要。
+
+`configs/*.sh` の思考モードセクションで設定する：
+
+```sh
+# thinking ON
+CHAT_TEMPLATE_KWARGS='{"enable_thinking": true}'
+
+# thinking OFF
+REASONING_BUDGET=0
+```
+
+両方コメントアウトのままだとモデルによって動作が変わるため、どちらかを明示的に指定することを推奨。
+
+thinking が有効な場合、レスポンスの `reasoning_content` フィールドに思考過程が流れてくる。
+
+---
+
 ## Cloudflare トンネル（外部公開）
 
 llama-server とは独立して起動する。llama-server を再起動してもトンネルは維持される。
