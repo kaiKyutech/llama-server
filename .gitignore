@@ -6,3 +6,7 @@ __pycache__/
 *.gguf
 *.deb
 CLAUDE.md
+
+# 実行環境ごとの設定はローカルで管理し、サンプルだけを Git 管理する
+configs/*.sh
+!configs/*.sample.sh

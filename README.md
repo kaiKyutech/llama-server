@@ -19,9 +19,9 @@ llama-server/
 ├── setup/
 │   └── install_llama.sh        # llama.cpp ビルドスクリプト
 ├── configs/
-│   ├── gpu_only.sh             # GPU only モード設定
-│   ├── cpu_only.sh             # CPU only モード設定
-│   └── cpu_gpu.sh              # CPU+GPU 混合モード設定
+│   ├── gpu_only.sample.sh      # GPU only モード設定サンプル
+│   ├── cpu_only.sample.sh      # CPU only モード設定サンプル
+│   └── cpu_gpu.sample.sh       # CPU+GPU 混合モード設定サンプル
 ├── scripts/
 │   ├── start.sh                # llama-server 起動スクリプト
 │   ├── tunnel.sh               # Cloudflare クイックトンネル起動
@@ -94,14 +94,23 @@ mkdir -p models
 
 ## 設定ファイルの編集（必須）
 
-`configs/` 以下のファイルを使用環境に合わせて編集する。
+`configs/*.sample.sh` をコピーして、Git 管理外のローカル設定を作成する。
 **最低限 `MODEL_PATH` をモデルの実際のパスに合わせること。**
+
+```bash
+cp configs/gpu_only.sample.sh configs/gpu_only.sh
+cp configs/cpu_only.sample.sh configs/cpu_only.sh
+cp configs/cpu_gpu.sample.sh configs/cpu_gpu.sh
+```
+
+使うモードの設定だけ作成すればよい。`configs/gpu_only.sh`、`configs/cpu_only.sh`、
+`configs/cpu_gpu.sh` は `.gitignore` 対象なので、サーバー固有のモデルパスや調整値を変更しても push されない。
 
 ```
 configs/
-├── gpu_only.sh   # GPU only で動かす場合
-├── cpu_only.sh   # CPU only で動かす場合
-└── cpu_gpu.sh    # CPU+GPU 混合で動かす場合
+├── gpu_only.sample.sh → gpu_only.sh   # GPU only
+├── cpu_only.sample.sh → cpu_only.sh   # CPU only
+└── cpu_gpu.sample.sh → cpu_gpu.sh     # CPU+GPU 混合
 ```
 
 各ファイル内のコメントアウトされたパラメータを外すことでチューニングできる。
@@ -117,7 +126,25 @@ chmod +x scripts/start.sh
 ./scripts/start.sh configs/gpu_only.sh    # GPU only
 ./scripts/start.sh configs/cpu_only.sh   # CPU only
 ./scripts/start.sh configs/cpu_gpu.sh    # CPU+GPU 混合
+LOG_VERBOSITY=4 ./scripts/start.sh configs/cpu_gpu.sh # ログ出力
 ```
+
+### MTP speculative decoding
+
+MTPを使う場合は、主モデルと同じ系列・サイズに対応する assistant/MTP GGUF を設定する。
+主モデルがQAT版なら、それに対応するMTPモデルを組み合わせる。対応しないモデル同士は混在させない。
+
+```sh
+MODEL_PATH="models/gemma4/gemma-4-12B-it-qat-UD-Q4_K_XL.gguf"
+MMPROJ_PATH="models/gemma4/mmproj-BF16.gguf"
+SPEC_DRAFT_MODEL_PATH="models/gemma4/mtp-gemma-4-12B-it.gguf"
+SPEC_TYPE="draft-mtp"
+SPEC_DRAFT_N_MAX=3
+SPEC_DRAFT_N_GPU_LAYERS=auto
+```
+
+`SPEC_DRAFT_N_MAX` は速度とドラフト受理率を見ながら調整する。まずは llama.cpp の既定値と同じ `3` を基準にし、
+MTPなしの結果とも比較する。起動ログの `draft acceptance` で受理率を確認できる。
 
 ---
 
@@ -152,6 +179,75 @@ uv run scripts/bench.py
 # オプション指定
 uv run scripts/bench.py --sessions 4 --prompt "やあ私は立夏。そちらも自己紹介お願い。"
 ```
+
+### 公式ツールで並列数を調べる
+
+`setup/install_llama.sh` で `llama.cpp` をビルドすると、`llama.cpp/build/bin/` に公式ベンチツールも生成される。
+
+```bash
+ls llama.cpp/build/bin/llama-bench llama.cpp/build/bin/llama-batched-bench
+```
+
+#### `llama-bench` と `llama-batched-bench` の違い
+
+- `llama-bench`: 単体の推論性能を測るツール
+- `llama-batched-bench`: 複数系列を同時に流したときの性能を測るツール
+
+`llama-bench` の `-pg` は **parallel の意味ではなく**、`prompt tokens, generated tokens` の組を表す。
+サーバーの `PARALLEL` や `--parallel` の最適値を探したい場合は、基本的に `llama-batched-bench` を使う。
+
+#### まず単体性能を見る
+
+```bash
+./llama.cpp/build/bin/llama-bench \
+  -m models/qwen3.5/Qwen3.5-9B-UD-Q5_K_XL.gguf \
+  -p 512 \
+  -n 128
+```
+
+これは 1 リクエスト相当の prompt 処理速度と生成速度の目安を見るためのもの。
+
+#### 並列数を変えて総スループットを測る
+
+現在の `configs/cpu_gpu.sh` に近い条件で、並列数だけを変えて比較する例:
+
+```bash
+./llama.cpp/build/bin/llama-batched-bench \
+  -m models/qwen3.5/Qwen3.5-9B-UD-Q5_K_XL.gguf \
+  -c 8192 \
+  -b 2048 \
+  -ub 512 \
+  -ngl auto \
+  -npp 512 \
+  -ntg 128 \
+  -npl 1,2,4,8
+```
+
+主な引数:
+
+- `-c`: 総コンテキスト長。サーバーの `CTX_SIZE` に相当
+- `-npp`: 1リクエストあたりの prompt トークン数
+- `-ntg`: 1リクエストあたりの生成トークン数
+- `-npl`: 試したい並列数。サーバーの `PARALLEL` に相当
+
+出力では次を見る:
+
+- `S t/s`: 全体の総スループット。複数リクエストを同時にさばく用途ではこれを重視
+- `S_TG t/s`: 生成フェーズの総トークン速度
+- `N_KV`: 必要な KV キャッシュ量の目安
+
+`S t/s` が最大になる `-npl` が、現在のモデル・量子化・GPU 条件での有力候補になる。
+ただし並列数を増やしすぎると 1 リクエストあたりの体感速度や各スロットのコンテキスト長は悪化するため、最大値だけでなく用途も合わせて判断すること。
+
+#### 調査の進め方
+
+1. `-npl 1,2,4,8` で大まかな傾向を見る
+2. まだ `S t/s` が伸びるなら `-npl 10,12` のように上側を追加で試す
+3. VRAM や KV キャッシュが厳しい場合は `-c` を下げるか `-npp` / `-ntg` を小さくする
+4. 実運用に近い prompt 長で再測定する
+
+異なるユーザーが別々の prompt を投げる通常のサーバー用途では、まず `-pps` は付けずに測るのが無難。
+共通の長い system prompt を多数の系列で共有したい場合だけ `-pps` も比較対象にする。
 
 ---
 
@@ -225,7 +321,7 @@ cd llama-server
 curl -LsSf https://astral.sh/uv/install.sh | sh   # uv インストール
 ./setup/install_llama.sh                           # llama.cpp ビルド
 # models/ にモデルファイルを配置
-# configs/ のパスを環境に合わせて編集
+# configs/*.sample.sh をコピーし、作成したローカル設定を環境に合わせて編集
 
 # 更新取り込み
 git pull origin main

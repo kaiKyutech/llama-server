@@ -101,11 +101,30 @@ if [ -n "$MMPROJ_PATH" ]; then
     fi
 fi
 
+SPEC_DRAFT_MODEL_PATH="${SPEC_DRAFT_MODEL_PATH:-}"
+if [ -n "$SPEC_DRAFT_MODEL_PATH" ]; then
+    if [ -z "${SPEC_TYPE:-}" ]; then
+        echo "エラー: SPEC_DRAFT_MODEL_PATH を使う場合は SPEC_TYPE も指定してください"
+        exit 1
+    fi
+    SPEC_DRAFT_MODEL_PATH="$(resolve_project_path "$SPEC_DRAFT_MODEL_PATH")"
+    if [ ! -f "$SPEC_DRAFT_MODEL_PATH" ]; then
+        echo "エラー: speculative decoding のドラフトモデルが見つかりません: $SPEC_DRAFT_MODEL_PATH"
+        exit 1
+    fi
+fi
+
 # コマンド組み立て
 CMD=("$LLAMA_BIN")
 CMD+=(--model "$MODEL_PATH")
 
 [ -n "$MMPROJ_PATH" ]           && CMD+=(--mmproj "$MMPROJ_PATH")
+[ -n "$SPEC_DRAFT_MODEL_PATH" ] && CMD+=(--spec-draft-model "$SPEC_DRAFT_MODEL_PATH")
+[ -n "${SPEC_TYPE:-}" ]         && CMD+=(--spec-type "$SPEC_TYPE")
+[ -n "${SPEC_DRAFT_N_MAX:-}" ]  && CMD+=(--spec-draft-n-max "$SPEC_DRAFT_N_MAX")
+[ -n "${SPEC_DRAFT_N_MIN:-}" ]  && CMD+=(--spec-draft-n-min "$SPEC_DRAFT_N_MIN")
+[ -n "${SPEC_DRAFT_N_GPU_LAYERS:-}" ] && CMD+=(--spec-draft-ngl "$SPEC_DRAFT_N_GPU_LAYERS")
+[ -n "${SPEC_DRAFT_DEVICE:-}" ] && CMD+=(--spec-draft-device "$SPEC_DRAFT_DEVICE")
 [ -n "${ALIAS:-}" ]             && CMD+=(--alias "$ALIAS")
 [ -n "${N_GPU_LAYERS:-}" ]      && CMD+=(--n-gpu-layers "$N_GPU_LAYERS")
 [ -n "${CTX_SIZE:-}" ]          && CMD+=(--ctx-size "$CTX_SIZE")
