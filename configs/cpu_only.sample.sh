@@ -3,6 +3,7 @@
 # cp configs/cpu_only.sample.sh configs/cpu_only.sh してからローカル設定を編集する。
 
 MODEL_PATH="models/your-model/model.gguf"
+# GENERATION_CONFIG_PATH="models/your-model/generation_config.json"
 # MMPROJ_PATH="models/your-model/mmproj.gguf"
 # ALIAS="your-model"
 

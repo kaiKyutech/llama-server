@@ -5,6 +5,10 @@
 # 必須: プロジェクトルートからの相対パス、または絶対パス
 MODEL_PATH="models/your-model/model.gguf"
 
+# 任意: Hugging Face から取得したモデル推奨の生成設定
+# API リクエストで省略された temperature / top_p / top_k などの既定値になる。
+# GENERATION_CONFIG_PATH="models/your-model/generation_config.json"
+
 # Vision モデルの場合だけ指定
 # MMPROJ_PATH="models/your-model/mmproj.gguf"
 # ALIAS="your-model"

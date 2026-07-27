@@ -116,6 +116,33 @@ configs/
 各ファイル内のコメントアウトされたパラメータを外すことでチューニングできる。
 パラメータの詳細は `docs/llama_help.md` を参照。
 
+### モデル推奨の生成設定
+
+Hugging Face のモデルリポジトリに `generation_config.json` がある場合は、
+モデルと同じディレクトリへダウンロードし、ローカル設定で指定できる。
+
+最新の llama.cpp は GGUF 内の `general.sampling.*` も自動的に読み込む。
+`GENERATION_CONFIG_PATH` を指定した場合は、JSONから変換した明示的な起動設定が
+GGUF 内の既定値より優先される。
+起動時にJSONとGGUFの重複項目を比較し、値が異なる場合は警告を表示する。
+JSONが未指定ならGGUF metadata、GGUFにも設定がなければllama.cppの既定値を
+使用することを起動時に表示する。JSONが指定され、GGUFに設定がない場合も、
+JSONを使用することを表示する。
+
+```sh
+MODEL_PATH="models/gemma4/model.gguf"
+GENERATION_CONFIG_PATH="models/gemma4/generation_config.json"
+```
+
+起動時に対応項目を llama-server の既定値へ変換するため、API リクエストごとに
+`temperature`、`top_p`、`top_k` などを指定する必要はない。API 側で明示した値は
+そのリクエストに限り起動時の既定値を上書きする。
+
+現在変換する項目は `temperature`、`top_k`、`top_p`、`min_p`、`typical_p`、
+`repetition_penalty`、`suppress_tokens`、`do_sample=false`（greedy decoding）。
+モデル構造や tokenizer に関する項目は GGUF のメタデータを使用し、
+Transformers 固有の項目は起動引数へ変換しない。
+
 ---
 
 ## 起動

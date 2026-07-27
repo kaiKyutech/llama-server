@@ -74,6 +74,30 @@ CONFIG_DIR="$(dirname "$CONFIG_FILE")"
 # 設定を読み込む
 source "$CONFIG_FILE"
 
+# Hugging Face generation_config.json の確認
+GENERATION_CONFIG_PATH="${GENERATION_CONFIG_PATH:-}"
+GENERATION_CONFIG_ARGS=()
+if [ -n "$GENERATION_CONFIG_PATH" ]; then
+    GENERATION_CONFIG_PATH="$(resolve_project_path "$GENERATION_CONFIG_PATH")"
+    if [ ! -f "$GENERATION_CONFIG_PATH" ]; then
+        echo "エラー: generation_config.json が見つかりません: $GENERATION_CONFIG_PATH"
+        exit 1
+    fi
+    if ! command -v python3 >/dev/null 2>&1; then
+        echo "エラー: generation_config.json の読み込みには python3 が必要です"
+        exit 1
+    fi
+
+    if ! GENERATION_CONFIG_OUTPUT="$(
+        python3 "$SCRIPT_DIR/generation_config_args.py" "$GENERATION_CONFIG_PATH"
+    )"; then
+        exit 1
+    fi
+    if [ -n "$GENERATION_CONFIG_OUTPUT" ]; then
+        mapfile -t GENERATION_CONFIG_ARGS <<< "$GENERATION_CONFIG_OUTPUT"
+    fi
+fi
+
 # llama-server の存在確認
 if [ ! -f "$LLAMA_BIN" ]; then
     echo "エラー: llama-server が見つかりません。先に setup/install_llama.sh を実行してください。"
@@ -89,6 +113,18 @@ fi
 MODEL_PATH="$(resolve_project_path "$MODEL_PATH")"
 if [ ! -f "$MODEL_PATH" ]; then
     echo "エラー: モデルファイルが見つかりません: $MODEL_PATH"
+    exit 1
+fi
+
+if ! command -v python3 >/dev/null 2>&1; then
+    echo "エラー: 生成設定の確認には python3 が必要です"
+    exit 1
+fi
+GENERATION_INSPECT_ARGS=(--model "$MODEL_PATH")
+if [ -n "$GENERATION_CONFIG_PATH" ]; then
+    GENERATION_INSPECT_ARGS+=(--generation-config "$GENERATION_CONFIG_PATH")
+fi
+if ! python3 "$SCRIPT_DIR/generation_config_inspect.py" "${GENERATION_INSPECT_ARGS[@]}"; then
     exit 1
 fi
 
@@ -117,6 +153,7 @@ fi
 # コマンド組み立て
 CMD=("$LLAMA_BIN")
 CMD+=(--model "$MODEL_PATH")
+CMD+=("${GENERATION_CONFIG_ARGS[@]}")
 
 [ -n "$MMPROJ_PATH" ]           && CMD+=(--mmproj "$MMPROJ_PATH")
 [ -n "$SPEC_DRAFT_MODEL_PATH" ] && CMD+=(--spec-draft-model "$SPEC_DRAFT_MODEL_PATH")
@@ -154,6 +191,7 @@ CMD+=(--model "$MODEL_PATH")
 [ -n "${LOG_VERBOSITY:-}" ]     && CMD+=(--verbosity "$LOG_VERBOSITY")
 
 echo "設定ファイル: $CONFIG_FILE"
+[ -n "$GENERATION_CONFIG_PATH" ] && echo "生成設定: $GENERATION_CONFIG_PATH"
 echo "起動コマンド: ${CMD[*]}"
 echo ""
 
