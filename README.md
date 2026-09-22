@@ -5,6 +5,8 @@ OpenAI 互換 API を提供しつつ、GPU only / CPU only / CPU+GPU 混合に�
 
 設計の背景や詳細は [docs/architecture.md](docs/architecture.md) を、開発フェーズは [docs/phases.md](docs/phases.md) を参照。
 
+このPCでの配置・起動方法は [ローカル運用](docs/local-operation.md) を参照。正式な作業場所は WSL Ubuntu 内の `/home/akai/llama-server`。
+
 ---
 
 ## ディレクトリ構成
@@ -130,8 +132,8 @@ JSONが未指定ならGGUF metadata、GGUFにも設定がなければllama.cpp�
 JSONを使用することを表示する。
 
 ```sh
-MODEL_PATH="models/gemma4/model.gguf"
-GENERATION_CONFIG_PATH="models/gemma4/generation_config.json"
+MODEL_PATH="models/gemma4-12b/model.gguf"
+GENERATION_CONFIG_PATH="models/gemma4-12b/generation_config.json"
 ```
 
 起動時に対応項目を llama-server の既定値へ変換するため、API リクエストごとに
@@ -162,9 +164,9 @@ MTPを使う場合は、主モデルと同じ系列・サイズに対応する a
 主モデルがQAT版なら、それに対応するMTPモデルを組み合わせる。対応しないモデル同士は混在させない。
 
 ```sh
-MODEL_PATH="models/gemma4/gemma-4-12B-it-qat-UD-Q4_K_XL.gguf"
-MMPROJ_PATH="models/gemma4/mmproj-BF16.gguf"
-SPEC_DRAFT_MODEL_PATH="models/gemma4/mtp-gemma-4-12B-it.gguf"
+MODEL_PATH="models/gemma4-12b/gemma-4-12B-it-qat-UD-Q4_K_XL.gguf"
+MMPROJ_PATH="models/gemma4-12b/mmproj-BF16.gguf"
+SPEC_DRAFT_MODEL_PATH="models/gemma4-12b/mtp-gemma-4-12B-it.gguf"
 SPEC_TYPE="draft-mtp"
 SPEC_DRAFT_N_MAX=3
 SPEC_DRAFT_N_GPU_LAYERS=auto

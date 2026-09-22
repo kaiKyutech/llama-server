@@ -10,3 +10,7 @@ CLAUDE.md
 # 実行環境ごとの設定はローカルで管理し、サンプルだけを Git 管理する
 configs/*.sh
 !configs/*.sample.sh
+
+# Windowsローカル操作用ランチャー
+/llama-start.bat
+/llama-stop.bat

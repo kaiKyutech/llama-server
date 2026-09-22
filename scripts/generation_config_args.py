@@ -77,6 +77,7 @@ def llama_args_from_config(config: dict[str, Any]) -> list[str]:
             "--repeat-penalty",
             _number(config, "repetition_penalty", minimum=0),
         ),
+        ("--presence-penalty", _number(config, "presence_penalty")),
     )
     for flag, value in mappings:
         if value is not None:

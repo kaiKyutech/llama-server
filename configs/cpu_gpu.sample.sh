@@ -15,7 +15,7 @@ MODEL_PATH="models/your-model/model.gguf"
 
 # MTP を使う場合だけ、主モデルに対応する assistant/MTP GGUF を指定
 # 例（Gemma 4 12B QAT）:
-# SPEC_DRAFT_MODEL_PATH="models/gemma4/mtp-gemma-4-12B-it.gguf"
+# SPEC_DRAFT_MODEL_PATH="models/gemma4-12b/mtp-gemma-4-12B-it.gguf"
 # SPEC_TYPE="draft-mtp"
 # SPEC_DRAFT_N_MAX=3
 # SPEC_DRAFT_N_MIN=0

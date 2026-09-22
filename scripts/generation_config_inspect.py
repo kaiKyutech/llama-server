@@ -147,7 +147,13 @@ def effective_json_values(config: dict[str, Any]) -> dict[str, int | float]:
     ):
         values["temperature"] = config["temperature"]
 
-    for key in ("top_k", "top_p", "min_p", "repetition_penalty"):
+    for key in (
+        "top_k",
+        "top_p",
+        "min_p",
+        "repetition_penalty",
+        "presence_penalty",
+    ):
         value = config.get(key)
         if isinstance(value, (int, float)) and not isinstance(value, bool):
             values[key] = value

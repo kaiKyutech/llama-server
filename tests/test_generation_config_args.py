@@ -43,6 +43,37 @@ class GenerationConfigArgsTest(unittest.TestCase):
         self.assertEqual(args[:2], ["--temp", "0"])
         self.assertEqual(args[2:], ["--top-k", "50"])
 
+    def test_qwen_thinking_config(self) -> None:
+        args = llama_args_from_config(
+            {
+                "do_sample": True,
+                "temperature": 1.0,
+                "top_p": 0.95,
+                "top_k": 20,
+                "min_p": 0.0,
+                "presence_penalty": 0.0,
+                "repetition_penalty": 1.0,
+            }
+        )
+
+        self.assertEqual(
+            args,
+            [
+                "--temp",
+                "1.0",
+                "--top-k",
+                "20",
+                "--top-p",
+                "0.95",
+                "--min-p",
+                "0.0",
+                "--repeat-penalty",
+                "1.0",
+                "--presence-penalty",
+                "0.0",
+            ],
+        )
+
     def test_transformers_only_fields_are_ignored(self) -> None:
         self.assertEqual(
             llama_args_from_config(
