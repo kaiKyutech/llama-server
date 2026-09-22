@@ -33,6 +33,7 @@ wsl -d Ubuntu-24.04 --cd /home/akai/llama-server bash scripts/start.sh configs/c
 ```
 
 設定を変える場合は `configs/gpu_only.sh` などを選ぶ。
+移行時点の `configs/cpu_only.sh` は未配置のQwen3-VLモデルを参照しているため、使用前にモデル配置または設定変更が必要。
 停止は起動したターミナルでCtrl+C。名前だけで一括killするとbonsaiも対象になり得るため行わない。
 
 ## 利用側
